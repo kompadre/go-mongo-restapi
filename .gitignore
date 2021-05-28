@@ -1,0 +1,7 @@
+.env
+.idea
+./main
+*.swp
+go.sum
+.*
+data/db/*

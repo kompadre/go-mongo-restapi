@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  base:
+    image: go-mongo-restapi-base:staging
+    build:
+      dockerfile: docker/base/Dockerfile
+      context: .
+  web:
+    build:
+      dockerfile: docker/web/Dockerfile
+      context: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/usr/src/app
+    links:
+      - "mongodb:${MONGODB_HOST}"
+    depends_on:
+      - base
+      - mongodb
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    user: ${UID}:${GID}
+    volumes:
+    - ./data/db:/data/db
+    ports:
+    - 27017:27017
+

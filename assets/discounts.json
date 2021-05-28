@@ -1,0 +1,13 @@
+{
+  "discounts": [
+    {
+      "sku": null,
+      "category": "boots",
+      "discount": 30
+    }, {
+      "sku": "000003",
+      "category": null,
+      "discount": 15
+    }
+  ]
+}
