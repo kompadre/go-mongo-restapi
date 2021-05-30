@@ -6,6 +6,7 @@ services:
       dockerfile: docker/base/Dockerfile
       context: .
   web:
+    image: go-mongo-restapi-web:staging
     build:
       dockerfile: docker/web/Dockerfile
       context: .
@@ -26,4 +27,3 @@ services:
     - ./data/db:/data/db
     ports:
     - 27017:27017
-

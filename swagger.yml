@@ -1,0 +1,80 @@
+openapi: 3.0.1
+info:
+  title: Products API
+  description: 'Simple products API'
+  version: 1.0.0
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+  - url: http://localhost:8080/
+tags:
+  - name: product
+    description: Everything about your Products
+    externalDocs:
+      description: Find out more
+      url: http://swagger.io
+paths:
+  /products:
+    get:
+      summary: Finds products
+      description: Multiple status values can be provided with comma separated strings
+      operationId: findPetsByStatus
+      responses:
+        200:
+          description: successful operation
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        400:
+          description: Invalid status value
+          content: {}
+components:
+  schemas:
+    Price:
+      required:
+        - original
+      type: object
+      properties:
+        original:
+          type: integer
+          format: int
+        final:
+          type: integer
+          format: int
+        discount_percentage:
+          type: integer
+        currency:
+          type: string
+          default: EUR
+    Product:
+      required:
+        - name
+        - sku
+      type: object
+      properties:
+        sku:
+          type: string
+        name:
+          type: string
+          example: doggie
+        category:
+          type: string
+        originalprice:
+          type: integer
+          format: int
+        price:
+          $ref: '#/components/schemas/Price'
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int
+        type:
+          type: string
+        message:
+          type: string

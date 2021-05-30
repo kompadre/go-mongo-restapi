@@ -1,28 +1,9 @@
-package product
+package model
 
 import (
 	"reflect"
 	"testing"
 )
-
-func getTestProduct() Product {
-	originalPrice := 89000
-	sku := "000001"
-	name := "BV Lean leather ankle boots"
-	category := "boots"
-	price := Price{
-		Original:           originalPrice,
-		Final:              originalPrice,
-		DiscountPercentage: 0,
-		Currency:           "EUR",
-	}
-	return Product{
-		Sku:        sku,
-		Name:       name,
-		Category: category,
-		price:      price,
-	}
-}
 
 func TestNew(t *testing.T) {
 	want := getTestProduct()
@@ -76,20 +57,28 @@ func TestProduct_ApplyDiscount(t *testing.T) {
 	}
 
 	oldDiscount := p.Price.DiscountPercentage
-	oldPrice    := p.Price.Final
+	oldPrice := p.Price.Final
 	d.DiscountPercentage = 10
 	if !p.ApplyDiscount(d) || oldDiscount == p.Price.DiscountPercentage || oldPrice == p.Price.Final {
 		t.Errorf("Discount %q wasn't applied while it should have %q", d, p)
 	}
 }
 
-/*
-func TestProduct_ToJson(t *testing.T) {
-	p := getTestProduct()
-	want := `{"Sku":"000001","Name":"BV Lean leather ankle boots","Categories":["boots"],"Price":{"Original":89000,"Final":89000,"DiscountPercentage":0,"Currency":"EUR"}}`
-	get, _ := p.ToJson()
-	if want != get {
-		t.Errorf("JSON generated %v doesn't match wanted %v", get, want)
+func getTestProduct() Product {
+	originalPrice := 89000
+	sku := "000001"
+	name := "BV Lean leather ankle boots"
+	category := "boots"
+	price := Price{
+		Original:           originalPrice,
+		Final:              originalPrice,
+		DiscountPercentage: 0,
+		Currency:           "EUR",
+	}
+	return Product{
+		Sku:      sku,
+		Name:     name,
+		Category: category,
+		Price:    price,
 	}
 }
- */
