@@ -15,7 +15,7 @@ While the idea is to deploy this using `docker-compose`,
 The preferred way to run this would be:  
 >$ **make dockerup**
 
-(see *Makefile* for more build targets.)
+because this command also generates *.env* (see *Makefile* for more build targets.)
 
 Once both services are up, API will be available at `http://localhost:8080` 
 via `GET /products`
