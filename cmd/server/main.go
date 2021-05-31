@@ -6,6 +6,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"go-mongo-restapi/internal/model"
+	"go-mongo-restapi/internal/storage/jsonfile"
+	"go-mongo-restapi/internal/storage/mongodb"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -26,15 +29,40 @@ var Config struct {
 
 type Server struct {
 	app    *fiber.App
-	mongo  *mongo.Client
+	mongo  struct {
+		client *mongo.Client
+		ctx *context.Context
+	}
 	logger *log.Logger
 }
 
 func (server *Server) routes() {
 	server.app.Get("/products", func(c *fiber.Ctx) error {
-		ps := model.RetrieveFromJson()
+		var ps *model.Products
+		if (os.Getenv("TESTING") == "") {
+			collection := server.mongo.client.Database("testing").Collection("product")
+			log.Printf("Collection: %v", collection)
+			ctx, cancel := server.Ctx()
+			defer cancel()
+			mhandle := mongodb.MongoStorageHandle{Collection: collection, Ctx: ctx}
+			q := c.Query("priceLessThan", "0")
+			qint, err := strconv.Atoi(q)
+			if err != nil {
+				qint = 10
+			}
+			ps = mhandle.RetrieveProducts(int64(qint))
+		} else {
+			ps = jsonfile.RetrieveProducts()
+		}
+		ps.ApplyDiscounts(model.CurrentDiscounts())
+		fmt.Println(ps)
 		return c.JSON(ps)
 	})
+}
+
+func (server *Server) Ctx() (*context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	return &ctx, cancel
 }
 
 func init() {
@@ -58,22 +86,64 @@ func (server *Server) run() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	mongouri := fmt.Sprintf("mongodb://%s:%d", Config.mongo.host, Config.mongo.port)
-	mongoclient, _ := mongo.Connect(ctx, options.Client().ApplyURI(mongouri))
 
-	defer func() {
-		if err := mongoclient.Disconnect(ctx); err != nil {
-			panic(err)
+	mongouri := fmt.Sprintf("mongodb://%s:%d", Config.mongo.host, Config.mongo.port)
+	var (
+		mongoclient *mongo.Client
+		err error
+	)
+
+	if os.Getenv("TESTING") == "" {
+		// NO time to mock and test this interaction with MongoDB
+		// Besides it would still be outside the scope of this application
+		mongoclient, err = mongo.Connect(ctx, options.Client().ApplyURI(mongouri))
+		if err != nil {
+			log.Panicf("Error connecting to mongo: %v", err)
 		}
-	}()
-	server.mongo = mongoclient
+		defer func() {
+			mongoclient.Disconnect(ctx)
+		}()
+		server.mongo.client = mongoclient
+		server.mongo.ctx = &ctx
+
+		// This, ofcourse, is not part of the products service bur rather we're feeding mongo initial data
+		// Normally mongodb's data would be managed outside
+
+		products := jsonfile.RetrieveProducts()
+		productsCollection := server.mongo.client.Database("testing").Collection("product")
+		productsCollection.DeleteMany(context.Background(), bson.M{})
+		_, err = productsCollection.Indexes().CreateOne(context.Background(),mongo.IndexModel{
+			Keys:    bson.D{{
+				Key:   "sku",
+				Value: 1,
+			}},
+			Options: options.Index().SetUnique(true),
+		})
+		if err != nil {
+			log.Fatalf("Error creating index: %v", err)
+		}
+
+		for _, product := range products.Data {
+			product.Price.Original = product.OriginalPrice
+			product.Price.Final = product.OriginalPrice
+			product.Price.Currency = "EUR"
+			res, err := productsCollection.InsertOne(*server.mongo.ctx, product)
+			if err != nil {
+				log.Printf("Failed to insert a product: %v", err)
+			} else {
+				log.Println(res)
+			}
+		}
+	}
 
 	app := fiber.New()
-	app.Use(cors.New())
+	app.Use(cors.New()) // I use CORS so that one can access the API from swagger editor for example
 	server.app = app
 	server.routes()
-	server.app.Listen(":" + strconv.Itoa(Config.http.port))
-
+	err = server.app.Listen(":" + strconv.Itoa(Config.http.port))
+	if err != nil {
+		log.Panicf("Error staring http server: %v", err)
+	}
 	return nil
 }
 

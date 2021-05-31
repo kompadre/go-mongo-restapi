@@ -1,17 +1,16 @@
 package model
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
 )
 
 type Price struct {
 	Original           int    `json:"original"`
-	Final              int    `json:"final,omitempty"`
+	Final              int    `json:"final"`
 	DiscountPercentage int    `json:"discount_percentage,omitempty"`
-	Currency           string `json:"currency,omitempty"`
+	Currency           string `json:"currency"`
 }
 
 type Product struct {
@@ -23,7 +22,15 @@ type Product struct {
 }
 
 type Products struct {
-	Data []Product `json:"products"`
+	Data []Product `json:"products" bson:"products"`
+}
+
+func (ps *Products) ApplyDiscounts(ds []Discount) {
+	for _, d := range ds {
+		for k, _ := range ps.Data {
+			ps.Data[k].ApplyDiscount(d)
+		}
+	}
 }
 
 type Collection []Product
@@ -31,6 +38,22 @@ type Collection []Product
 func New(sku string, name string, category string, price Price) *Product {
 	return &Product{Sku: sku, Name: name, Price: price, Category: category}
 }
+
+// Making sure the response matches what spec says
+func (p Product) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+	value, _ := json.Marshal(p.Sku)
+	buffer.WriteString(`"sku":` + string(value) + `,`)
+	value, _ = json.Marshal(p.Name)
+	buffer.WriteString(`"name":` + string(value) + `,`)
+	value, _ = json.Marshal(p.Category)
+	buffer.WriteString(`"category":` + string(value) + `,`)
+	value, _ = json.Marshal(p.Price)
+	buffer.WriteString(`"price":` + string(value))
+	buffer.WriteString(`}`)
+	return buffer.Bytes(), nil
+}
+
 
 func (p *Product) DiscountApplies(d Discount) bool {
 	if d.Sku == p.Sku {
@@ -43,45 +66,18 @@ func (p *Product) DiscountApplies(d Discount) bool {
 }
 
 func (p *Product) ApplyDiscount(d Discount) bool {
-	if d.DiscountPercentage < 0 || d.DiscountPercentage > 100 || p.Price.Original <= 0 {
+	if d.DiscountPercentage <= p.Price.DiscountPercentage || !p.DiscountApplies(d) {
 		return false
 	}
-	if p.DiscountApplies(d) && d.DiscountPercentage > p.Price.DiscountPercentage {
-		newDiscountPercentage := d.DiscountPercentage
-		p.Price.DiscountPercentage = newDiscountPercentage
-		p.Price.Final = int((0.01 * float64(100-newDiscountPercentage)) * float64(p.Price.Original))
-		return true
-	}
-	return false
-}
-
-/*
-func (p *Product) unmarshalJSON(data []byte) error {
-	err := json.Unmarshal(data, p)
-	/*
-	if p.Price.Original == 0 {
-		p.Price.Original, p.Price.Final = p.OriginalPrice, p.OriginalPrice
-		p.Price.Currency = "EUR"
-	}
-	* /
-	return err
-}
-*/
-
-func RetrieveFromJson() *Products {
-	var products Products
-	cwd, _ := os.Getwd()
-	jsonFile, _ := os.Open(cwd + "/assets/products.json")
-	byteValue, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		return nil
-	}
-	err = json.Unmarshal(byteValue, &products)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	return &products
+	fmt.Println("Applying discount!")
+	newDiscountPercentage := d.DiscountPercentage
+	newPrice := int(float32(p.OriginalPrice) * 0.01 * float32(100-newDiscountPercentage))
+	fmt.Println(newPrice)
+	price := p.Price
+	price.DiscountPercentage = newDiscountPercentage
+	price.Final = newPrice
+	p.Price = price
+	return true
 }
 
 func sliceContains(needle string, hay []string) bool {
@@ -92,13 +88,3 @@ func sliceContains(needle string, hay []string) bool {
 	}
 	return false
 }
-
-/*
-func (p Price) MarshalJSON() ([]byte, error) {
-	marshalledData, err := json.Marshal(p)
-	return marshalledData, err
-}
-func (p Product) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p)
-}
-*/

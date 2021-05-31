@@ -29,7 +29,44 @@
       "sku": "000005",
       "name": "Nathane leather sneakers",
       "category": "sneakers",
+      "price": 45000
+    },
+    {
+      "sku": "000006",
+      "name": "Ok leather boots",
+      "category": "boots",
+      "price": 69600
+    },
+    {
+      "sku": "000007",
+      "name": "Tryhard leather jacket",
+      "category": "jackets",
+      "price": 159000
+    },
+    {
+      "sku": "000008",
+      "name": "Guybrush Threepwood's fake leather jacket",
+      "category": "boots",
+      "price": 100000
+    },
+    {
+      "sku": "000009",
+      "name": "Emmanuele leather snork",
+      "category": "sneakers",
       "price": 59000
+    },
+    {
+      "sku": "000010",
+      "name": "Moreau leather twister",
+      "category": "carpet",
+      "price": 99000
+    },
+    {
+      "sku": "000011",
+      "name": "Cool transducers",
+      "category": "speakers",
+      "price": 210000
     }
+
   ]
 }

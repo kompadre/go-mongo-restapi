@@ -3,17 +3,17 @@ info:
   title: Products API
   description: 'Simple products API'
   version: 1.0.0
-externalDocs:
-  description: Find out more about Swagger
-  url: http://swagger.io
+#externalDocs:
+#  description: Find out more about Swagger
+#  url: http://swagger.io
 servers:
   - url: http://localhost:8080/
 tags:
   - name: product
     description: Everything about your Products
-    externalDocs:
-      description: Find out more
-      url: http://swagger.io
+#    externalDocs:
+#      description: Find out more
+#      url: http://swagger.io
 paths:
   /products:
     get:

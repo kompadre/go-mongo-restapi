@@ -1,7 +1,8 @@
 .env
 .idea
 ./main
+bin/*
 *.swp
 go.sum
-.*
 data/db/*
+assets/extra.json

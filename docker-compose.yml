@@ -5,8 +5,8 @@ services:
     build:
       dockerfile: docker/base/Dockerfile
       context: .
-  web:
-    image: go-mongo-restapi-web:staging
+  http:
+    image: go-mongo-restapi-http:staging
     build:
       dockerfile: docker/web/Dockerfile
       context: .
